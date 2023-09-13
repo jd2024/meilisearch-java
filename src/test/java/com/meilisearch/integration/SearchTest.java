@@ -13,6 +13,8 @@ import static org.hamcrest.Matchers.nullValue;
 import com.meilisearch.integration.classes.AbstractIT;
 import com.meilisearch.integration.classes.TestData;
 import com.meilisearch.sdk.Index;
+import com.meilisearch.sdk.IndexSearchRequest;
+import com.meilisearch.sdk.MultiSearchRequest;
 import com.meilisearch.sdk.SearchRequest;
 import com.meilisearch.sdk.json.GsonJsonHandler;
 import com.meilisearch.sdk.model.MatchingStrategy;
@@ -21,11 +23,14 @@ import com.meilisearch.sdk.model.SearchResultPaginated;
 import com.meilisearch.sdk.model.Searchable;
 import com.meilisearch.sdk.model.Settings;
 import com.meilisearch.sdk.model.TaskInfo;
+import com.meilisearch.sdk.model.MultiSearchResult;
 import com.meilisearch.sdk.utils.Movie;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+
+import java.util.HashSet;
 
 @Tag("integration")
 public class SearchTest extends AbstractIT {
@@ -597,5 +602,46 @@ public class SearchTest extends AbstractIT {
         Searchable searchResult = index.search(SearchRequest.builder().q(null).limit(10).build());
 
         assertThat(searchResult.getHits(), hasSize(10));
+    }
+
+    @Test
+    public void testMultiSearch() throws Exception {
+        HashSet<String> indexUids = new HashSet();
+        indexUids.add("MultiSearch1");
+        indexUids.add("MultiSearch2");
+
+
+        for(String indexUid : indexUids) {
+            Index index = client.index(indexUid);
+
+            TestData<Movie> testData = this.getTestData(MOVIES_INDEX, Movie.class);
+            TaskInfo task = index.addDocuments(testData.getRaw());
+
+            index.waitForTask(task.getTaskUid());
+        }
+
+
+        MultiSearchRequest search = new MultiSearchRequest();
+
+        for(String indexUid : indexUids) {
+            search.addQuery(
+                new IndexSearchRequest(indexUid)
+                    .setQuery("batman")
+            );
+        }
+
+        MultiSearchResult[] results = client.multiSearch(search).getResults();
+
+        assertThat(results.length, is(2));
+        
+        for(MultiSearchResult searchResult : results) {
+            assertThat(indexUids.contains(searchResult.getIndexUid()), is(true));
+            assertThat(searchResult.getFacetDistribution(), is(nullValue()));
+            assertThat(searchResult.getHits(), hasSize(1));
+            assertThat(searchResult.getOffset(), is(equalTo(0)));
+            assertThat(searchResult.getLimit(), is(equalTo(20)));
+            assertThat(searchResult.getEstimatedTotalHits(), is(equalTo(1)));
+        }
+
     }
 }

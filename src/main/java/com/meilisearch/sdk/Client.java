@@ -20,6 +20,7 @@ import com.meilisearch.sdk.model.Task;
 import com.meilisearch.sdk.model.TaskInfo;
 import com.meilisearch.sdk.model.TasksQuery;
 import com.meilisearch.sdk.model.TasksResults;
+import com.meilisearch.sdk.model.MultiSearchResult;
 import java.util.Date;
 import java.util.Map;
 import java.util.TimeZone;
@@ -377,6 +378,10 @@ public class Client {
      */
     public void deleteKey(String key) throws MeilisearchException {
         this.keysHandler.deleteKey(key);
+    }
+
+    public Results<MultiSearchResult> multiSearch(MultiSearchRequest search) throws MeilisearchException {
+        return this.config.httpClient.post("/multi-search", search, Results.class, MultiSearchResult.class);
     }
 
     public String generateTenantToken(String apiKeyUid, Map<String, Object> searchRules)
