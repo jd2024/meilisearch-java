@@ -170,24 +170,6 @@ publishing {
 	}
 }
 
-nexusPublishing {
-	packageGroup = "com.meilisearch"
-
-	repositories {
-		sonatype {
-			nexusUrl.set(uri("https://oss.sonatype.org/service/local/"))
-
-			username = System.getenv('OSSRH_USERNAME')
-			password = System.getenv('OSSRH_PASSWORD')
-			stagingProfileId = System.getenv('SONATYPE_STAGING_PROFILE_ID')
-		}
-	}
-}
-
-signing {
-	sign publishing.publications.mavenJava
-}
-
 javadoc {
 	if(JavaVersion.current().isJava9Compatible()) {
 		options.addBooleanOption('html5', true)
